@@ -1,142 +1,160 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * Example app stolen from
+ * https://github.com/codezri/react-native-todo-firebase
  *
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import firebase from '@react-native-firebase/app';
+import database from '@react-native-firebase/database';
+
+import React, { useState, useEffect } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  Button,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 
-import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
+const reference = database().ref('/users/Counternames');
 
-import firebase from '@react-native-firebase/app';
-import analytics from '@react-native-firebase/analytics';
-import appCheck from '@react-native-firebase/app-check';
-import appDistribution from '@react-native-firebase/app-distribution';
-import auth from '@react-native-firebase/auth';
-import crashlytics from '@react-native-firebase/crashlytics';
-import database from '@react-native-firebase/database';
-import dynamicLinks from '@react-native-firebase/dynamic-links';
-import firestore from '@react-native-firebase/firestore';
-import functions from '@react-native-firebase/functions';
-import inAppMessaging from '@react-native-firebase/in-app-messaging';
-import installations from '@react-native-firebase/installations';
-import messaging from '@react-native-firebase/messaging';
-import perf from '@react-native-firebase/perf';
-import remoteConfig from '@react-native-firebase/remote-config';
-import storage from '@react-native-firebase/storage';
+const App = () => {
+  const [counterNames, setCounterNames] = useState({});
+  const counterNameKeys = Object.keys(counterNames);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const initialList = {
+    '-MGQOBLgEvEekOg6geQI': {
+      '.value': 'Counter 11',
+      '.priority': 4,
+    },
+    '-MGzzZXdUwpBr8RlLLE-': {
+      '.value': 'Counter 22',
+      '.priority': 0,
+    },
+    '-MH3MqLK32gCi0pqBUg3': {
+      '.value': 'Counter 33',
+      '.priority': 1,
+    },
+    '-MH3NnGU5iM0eakrd7ZS': {
+      '.value': 'Counter 44',
+      '.priority': 2,
+    },
+    '-MH4yucF8rmeewGbPAVI': {
+      '.value': 'Counter 55',
+      '.priority': 3,
+    },
+    '-NuBYkNVlAUIUeoQQCKA': {
+      '.value': 'Counter 66',
+      '.priority': 5,
+    },
   };
 
-  const dynStyles = StyleSheet.create({
-    colors: {
-      color: isDarkMode ? Colors.white : Colors.black,
-    },
-  });
+  useEffect(() => {
+    reference.on('value', (snapshot) => {
+      let data = snapshot.exportVal();
+      console.log(`User data: ${JSON.stringify(data, null, 2)}`);
+      var ch = snapshot.child('-MH3NnGU5iM0eakrd7ZS').exportVal();
+      console.log(`Counter 44 exportVal ${JSON.stringify(ch)}`);
+      let cNames = {};
+      snapshot.forEach((ctr) => {
+        let p = ctr.getPriority();
+        cNames[ctr.key] = { priority: p, value: ctr.val() };
+
+        console.log(
+          `Counter priority ${p} has key ${ctr.key}, val ${ctr.val()}`
+        );
+      });
+
+      setCounterNames(cNames);
+    });
+  }, []);
+
+  useEffect(() => {
+    // initialize
+    reference.update(initialList);
+  }, []);
+
+  function updatePriorities() {
+    const k = Object.keys(initialList);
+    k.forEach(
+      (key) =>
+        (initialList[key]['.priority'] = (Math.random() * 1000).toFixed(0))
+    );
+    console.log(initialList);
+    reference.update(initialList);
+  }
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            alignItems: 'center',
-          }}>
-          <Section title="RNFirebase Build Demo" />
-          <Text />
-          <Text style={dynStyles.colors}>JSI Executor: {global.__jsiExecutorDescription}</Text>
-          <Text />
-          <Text style={dynStyles.colors}>These firebase modules appear to be working:</Text>
-          <Text />
-          {firebase.apps.length && <Text style={dynStyles.colors}>app()</Text>}
-          {analytics().native && <Text style={dynStyles.colors}>analytics()</Text>}
-          {appCheck().native && <Text style={dynStyles.colors}>appCheck()</Text>}
-          {appDistribution().native && <Text style={dynStyles.colors}>appDistribution()</Text>}
-          {auth().native && <Text style={dynStyles.colors}>auth()</Text>}
-          {crashlytics().native && <Text style={dynStyles.colors}>crashlytics()</Text>}
-          {database().native && <Text style={dynStyles.colors}>database()</Text>}
-          {dynamicLinks().native && <Text style={dynStyles.colors}>dynamicLinks()</Text>}
-          {firestore().native && <Text style={dynStyles.colors}>firestore()</Text>}
-          {functions().native && <Text style={dynStyles.colors}>functions()</Text>}
-          {inAppMessaging().native && <Text style={dynStyles.colors}>inAppMessaging()</Text>}
-          {installations().native && <Text style={dynStyles.colors}>installations()</Text>}
-          {messaging().native && <Text style={dynStyles.colors}>messaging()</Text>}
-          {perf().native && <Text style={dynStyles.colors}>perf()</Text>}
-          {remoteConfig().native && <Text style={dynStyles.colors}>remoteConfig()</Text>}
-          {storage().native && <Text style={dynStyles.colors}>storage()</Text>}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainerStyle}
+    >
+      <View>
+        {counterNameKeys.length > 0 ? (
+          counterNameKeys.map((key) => (
+            <CounterNameItem
+              key={key}
+              id={key}
+              counterName={counterNames[key]}
+            />
+          ))
+        ) : (
+          <Text>No items</Text>
+        )}
+      </View>
+
+      <View>
+        <View style={{ marginTop: 20 }}>
+          <Button
+            title="Update priorities"
+            onPress={updatePriorities}
+            color="green"
+            disabled={false}
+          />
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
-}
+};
+
+const CounterNameItem = ({ counterName, id }) => {
+  const priority = counterName?.['priority'] ?? 'no priority';
+  const value = counterName?.['value'] ?? counterName;
+  console.log(counterName, id);
+  return (
+    <View style={styles.counterName}>
+      <Text style={[styles.todoText]}>{priority}</Text>
+      <Text style={[styles.todoText]}>{value}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    paddingTop: 12,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  contentContainerStyle: {
+    padding: 24,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#afafaf',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginVertical: 20,
+    fontSize: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  counterName: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  todoText: {
+    paddingHorizontal: 5,
+    fontSize: 16,
   },
 });
 
